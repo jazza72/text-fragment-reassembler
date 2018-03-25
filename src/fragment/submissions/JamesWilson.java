@@ -89,7 +89,7 @@ public class JamesWilson {
 		List<String> fragments = new ArrayList<>(Arrays.asList(input.split("[;]")));
 
 		if (fragments.size() == 1)
-			return input;
+			return fragments.get(0);
 
 		// loop until there is only one element in the list
 		// - the reconstructed sentence
@@ -120,7 +120,7 @@ public class JamesWilson {
 		}
 
 		// the first (only) element in the list is the defragmented text
-		return fragments.get(0).trim();
+		return fragments.get(0);
 	}
 	
 	
@@ -291,24 +291,24 @@ public class JamesWilson {
 			assert (defragged.equals("This is a test"));
 			
 			//single word - with delimiter
-			defragged = JamesWilson.reassemble("This is a test;");
+			defragged = JamesWilson.reassemble(";;This is a test;");
 			
 			assert (defragged.equals("This is a test"));
 			
 			//empty string
 			defragged = JamesWilson.reassemble("        ;    ");
 			
-			assert (defragged.equals(""));
+			assert (defragged.equals("        "));
 			
 			//empty string
 			defragged = JamesWilson.reassemble("     ");
 			
-			assert (defragged.equals(""));
+			assert (defragged.equals("     "));
 			
 			//empty string
 			defragged = JamesWilson.reassemble(" ;");
 			
-			assert (defragged.equals(""));
+			assert (defragged.equals(" "));
 			
 		}
 
