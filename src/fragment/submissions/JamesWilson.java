@@ -37,7 +37,7 @@ public class JamesWilson {
 	 * @param s1
 	 *            - the "overlapping" string
 	 * @param s2
-	 *            = the "overlapped" string
+	 *            - the "overlapped" string
 	 * @return number of overlapping characters - 0 indicates no overlap
 	 */
 	public static int overlap(String s1, String s2) {
@@ -46,7 +46,6 @@ public class JamesWilson {
 		if (s1.equals(s2))
 			return 0;
 
-		// number of chars from end of s1 to start match string
 		int len = 1;
 
 		// start at the last char in s1, terminate if we go over the length of
@@ -65,8 +64,7 @@ public class JamesWilson {
 		if (s2.indexOf(s1.substring(s1.length() - len)) > 0 && len != s1.length()) {
 			len = 0;
 		}
-
-		// subtract 1 to get length of overlap
+ 
 		return len;
 
 	}
@@ -85,14 +83,11 @@ public class JamesWilson {
 
 		final String input = fragmentedLine;
 
-		// empty string
 		if (input.trim().equals(""))
 			return input;
 
-		// first split to a list
 		List<String> fragments = new ArrayList<>(Arrays.asList(input.split("[;]")));
 
-		// list of size 1?
 		if (fragments.size() == 1)
 			return input;
 
@@ -103,47 +98,56 @@ public class JamesWilson {
 			// sort by length
 			fragments.sort((o1, o2) -> o2.length() - o1.length());
 
-			List<Overlap> overlaps = new ArrayList<>();
-
-			// double loop - nasty
-			for (String fragmentOuter : fragments) {
-				for (String fragmentInner : fragments) {
-					// test for overlap
-					int overlap = JamesWilson.overlap(fragmentOuter, fragmentInner);
-
-					// add to list of overlaps if required
-					if (overlap > 0) {
-						overlaps.add(new Overlap(fragmentOuter, fragmentInner, overlap));
-					}
-				}
-			}
-
+			//calculate overlaps
+			List<Overlap> overlaps = JamesWilson.calculateOverlaps(fragments);
+			
 			// if for some reason, there are non-overlapping fragments left in the fragment
-			// list
-			// then simply take the longest fragment as the text to be returned
+			// list then simply take the longest fragment as the text to be returned
 			if (overlaps.isEmpty()) {
 				break;
 			}
 
-			// now sort the list
 			overlaps.sort((o1, o2) -> o2.overlap - o1.overlap);
 
 			// take the first element of the list - the largest overlap
 			Overlap o = overlaps.get(0);
 
-			// perform the merge
-			String merged = JamesWilson.merge(o.front, o.back, o.overlap);
+			String merged = JamesWilson.merge(o.prefix, o.suffix, o.overlap);
 
-			// add the newly created fragment
 			fragments.add(merged);
-
-			// remove the merged elements from the list
-			fragments.remove(o.front);
-			fragments.remove(o.back);
+			fragments.remove(o.prefix);
+			fragments.remove(o.suffix);
 		}
 
 		// the first (only) element in the list is the defragmented text
-		return fragments.get(0);
+		return fragments.get(0).trim();
+	}
+	
+	
+	/**
+	 * Generates a <code>List</code> of <code>Overlaps</code> for the passed
+	 * <code>List</code> of text fragments.
+	 *  
+	 * @param text fragments
+	 * @return list of overlaps (if any)
+	 */
+	private static List<Overlap> calculateOverlaps (List<String> fragments) {
+		
+		List<Overlap> overlaps = new ArrayList<>();
+		
+		for (String fragmentOuter : fragments) {
+			for (String fragmentInner : fragments) {
+				// test for overlap
+				int overlap = JamesWilson.overlap(fragmentOuter, fragmentInner);
+
+				// add to list of overlaps if required
+				if (overlap > 0) {
+					overlaps.add(new Overlap(fragmentOuter, fragmentInner, overlap));
+				}
+			}
+		}
+		
+		return overlaps;		
 	}
 
 	/**
@@ -163,7 +167,6 @@ public class JamesWilson {
 
 		// prepend it
 		return prefix + s2;
-
 	}
 
 	/**
@@ -174,16 +177,16 @@ public class JamesWilson {
 	private static class Overlap {
 
 		// the overlapping string
-		final private String front;
+		final private String prefix;
 
 		// the overlapped string
-		final private String back;
+		final private String suffix;
 
 		final private int overlap;
 
 		private Overlap(String front, String back, int overlap) {
-			this.front = front;
-			this.back = back;
+			this.prefix = front;
+			this.suffix = back;
 			this.overlap = overlap;
 		}
 	}
@@ -246,6 +249,20 @@ public class JamesWilson {
 
 			assert (merged.equals("O draconian devil! Oh la"));
 		}
+		
+		private static void testOverlapCalculation() {
+			
+			List<String> l = new ArrayList<>(Arrays.asList(new String[]{"Dirty British coaster with a salt-caked smoke stack, ", 
+												 "With a cargo of Tyne coal, Roa",
+												 "ack, Butting through the Channel in the mad March days, With a c",
+												 "Road-rails, pig-lead, F",
+												 "Firewood, iron-ware, and cheap tin trays."}));
+			
+			List<Overlap> o = JamesWilson.calculateOverlaps(l);
+			
+			assert (o.size()==5);
+						
+		}
 
 		private static void testReassemble() {
 			String defragged = JamesWilson.reassemble("O draconia;conian devil! Oh la;h lame sa;saint!");
@@ -258,11 +275,41 @@ public class JamesWilson {
 			assert (defragged.equals(
 					"Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem."));
 
+			defragged = JamesWilson.reassemble("Dirty British coaster with a salt-caked smoke stack, ;Firewood, iron-ware, and cheap tin trays.;With a cargo of Tyne coal, Roa;ack, Butting through the Channel in the mad March days, With a c;Road-rails, pig-lead, F;");
+			
+			assert (defragged.equals("Dirty British coaster with a salt-caked smoke stack, Butting through the Channel in the mad March days, With a cargo of Tyne coal, Road-rails, pig-lead, Firewood, iron-ware, and cheap tin trays."));
+			
 			// test the case where some fragments may not overlap - just return longest
 			// remaining fragment
 			defragged = JamesWilson.reassemble("va technical;I really lo; tests!; love doing Jav;");
 
 			assert (defragged.equals("I really love doing Java technical"));
+			
+			//single word - no delimiter
+			defragged = JamesWilson.reassemble("This is a test");
+			
+			assert (defragged.equals("This is a test"));
+			
+			//single word - with delimiter
+			defragged = JamesWilson.reassemble("This is a test;");
+			
+			assert (defragged.equals("This is a test"));
+			
+			//empty string
+			defragged = JamesWilson.reassemble("        ;    ");
+			
+			assert (defragged.equals(""));
+			
+			//empty string
+			defragged = JamesWilson.reassemble("     ");
+			
+			assert (defragged.equals(""));
+			
+			//empty string
+			defragged = JamesWilson.reassemble(" ;");
+			
+			assert (defragged.equals(""));
+			
 		}
 
 		public static void main(String args[]) {
@@ -270,8 +317,10 @@ public class JamesWilson {
 
 			TextFragmentReassemblerTester.testMerge();
 
-			TextFragmentReassemblerTester.testReassemble();
+			TextFragmentReassemblerTester.testOverlapCalculation();
 			
+			TextFragmentReassemblerTester.testReassemble();
+						
 			System.out.println("Unit tests passed successfully");
 		}
 	}
