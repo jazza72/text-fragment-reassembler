@@ -40,33 +40,27 @@ public class JamesWilson {
 	 *            - the "overlapped" string
 	 * @return number of overlapping characters - 0 indicates no overlap
 	 */
-	public static int overlap(String s1, String s2) {
+	private static int overlap(String s1, String s2) {
 
 		// if these are the same string object, then just return the length
 		if (s1.equals(s2))
 			return 0;
 
-		int len = 1;
+		int len = s1.length();
 
-		// start at the last char in s1, terminate if we go over the length of
-		// overlapping string
-		while (len <= s1.length() && s2.indexOf(s1.substring((s1.length() - len))) != -1) {
-			len++;
+		//start with trying to match the whole of s1 to s2 and decrease by one char
+		//each time until a match is found or the end of s1 is reached
+		while (len > 0 && !s2.startsWith(s1.substring((s1.length() - len)))) {
+			len--;
 		}
 
-		// subtract 1 to get overlap
-		len -= 1;
-
-		// there is one edge case to consider - where there is a partial overlap of s1
-		// but this overlap
-		// does not start at the first char of s2 eg: XYZABC AABCET- this is not an
-		// overlap
-		if (s2.indexOf(s1.substring(s1.length() - len)) > 0 && len != s1.length()) {
-			len = 0;
+		//if there is no match as a starting string, then see if the whole of the s1 string 
+		//overlaps with the s2 string
+		if (s2.indexOf(s1) != -1) {
+			len = s1.length();
 		}
- 
+		
 		return len;
-
 	}
 
 	/**
@@ -79,7 +73,7 @@ public class JamesWilson {
 	 *            - the line of text fragments
 	 * @return the defragmented, reconstructed line of text
 	 */
-	public static String reassemble(String fragmentedLine) {
+	private static String reassemble(String fragmentedLine) {
 
 		final String input = fragmentedLine;
 
@@ -160,7 +154,7 @@ public class JamesWilson {
 	 * 
 	 * @return the merged string
 	 */
-	public static String merge(String s1, String s2, int overlap) {
+	private static String merge(String s1, String s2, int overlap) {
 
 		// get the substring to prepend
 		String prefix = s1.substring(0, s1.length() - overlap);
@@ -222,7 +216,7 @@ public class JamesWilson {
 
 			assert (overlap == 4);
 
-			overlap = JamesWilson.overlap("XYZABC", "BCABCDEF");
+			overlap = JamesWilson.overlap("XYZABC", "ZZABCDEF");
 
 			assert (overlap == 0);
 
@@ -309,6 +303,10 @@ public class JamesWilson {
 			defragged = JamesWilson.reassemble(" ;");
 			
 			assert (defragged.equals(" "));
+			
+			defragged = JamesWilson.reassemble("repeat, now;now let's repeat; repeat now!");
+			
+			assert (defragged.equals("repeat, now let's repeat now!"));
 			
 		}
 
